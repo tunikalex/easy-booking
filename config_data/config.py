@@ -2,16 +2,16 @@ import os
 from dotenv import load_dotenv, find_dotenv
 
 if not find_dotenv():
-    exit('Переменные окружения не загружены т.к отсутствует файл .env')
+    exit('Environment variables not loaded because .env file is missing')
 else:
     load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 DEFAULT_COMMANDS = (
-    ('start', "Запустить бота"),
-    # ('hello', 'Поздоровайся, будь вежлевым'),
-    ('help', "Вывести справку по командам"),
-    ('hightprice', "Вывод самых ДОРОГИХ отелей в городе"),
-    ('lowprice', 'Вывод самых ДЕШЁВЫХ отелей в городе')
+    ('start', "Run a bot"),
+    ('hello', 'Say hello, be polite'),
+    ('help', "Display command help"),
+    ('hightprice', "Display the most EXPENSIVE hotels in the city"),
+    ('lowprice', 'Display the CHEAPEST hotels in the city')
 )
