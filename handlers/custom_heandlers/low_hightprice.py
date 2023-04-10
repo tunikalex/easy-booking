@@ -154,7 +154,7 @@ def table_age(message: Message) -> None:
                      reply_markup=markup)
 
 def choose_need_pic(message: Message) -> None:
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=5)
     for i in range(1, 11):
         item_i = types.InlineKeyboardButton(f"{i}", callback_data=f'{i}')
         markup.add(item_i)
