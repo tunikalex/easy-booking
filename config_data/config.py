@@ -12,6 +12,6 @@ DEFAULT_COMMANDS = (
     ('start', "Run a bot"),
     ('hello', 'Say hello, be polite'),
     ('help', "Display command help"),
-    ('hightprice', "Display the most EXPENSIVE hotels in the city"),
+    ('highprice', "Display the most EXPENSIVE hotels in the city"),
     ('lowprice', 'Display the CHEAPEST hotels in the city')
 )
