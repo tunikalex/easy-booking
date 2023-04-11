@@ -33,7 +33,7 @@ def cal(call):
         with bot.retrieve_data(call.from_user.id, call.from_user.id) as data:
             if result < datetime.date.today():  # если введена дата из прошлого
                 bot.send_message(call.from_user.id, "You cannot select a date from the past. Try again ")
-                start_calendar(message=call.message)
+                start_calendar(message=call)
             elif data['marker'] == 'check_in':
                 data["date_check_in"] = result  # дата заселения
             elif data['marker'] == 'check_out':
