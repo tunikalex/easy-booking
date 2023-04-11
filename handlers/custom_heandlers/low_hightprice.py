@@ -67,25 +67,29 @@ def high_low(message: Message) -> None:
     try:
         hotels = response["data"]["propertySearch"]["properties"]
     except:
-        bot.send_message(message.from_user.id, "I can not find hotels in the city you are interested in. \n"
-                                               "Please retry your request.")
+        bot.send_message(message.from_user.id, "I can not find hotels in the city you are interested in.")
         bot.delete_state(message.from_user.id)
 
 
-    markup_hotel = types.InlineKeyboardMarkup(row_width=1)
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['all_hotels'] = hotels
-        if data['command'] == 'highprice':
-            hotels = reversed(hotels)
+    try:
+        markup_hotel = types.InlineKeyboardMarkup(row_width=1)
+        with bot.retrieve_data(message.from_user.id, message.from_user.id) as data:
+            data['all_hotels'] = hotels
 
-        for ikey, i_hotel in enumerate(hotels):
-            item_hotel = types.InlineKeyboardButton(
-                f"{i_hotel['name']} | {i_hotel['price']['lead']['formatted']} per night",
-                callback_data=i_hotel['id'])
-            markup_hotel.add(item_hotel)
-            if ikey == int(quantity_hotels) - 1:
-                break
-        bot.send_message(message.from_user.id, 'CHOOSE interest hotel for you', reply_markup=markup_hotel)
+            if data['command'] == 'highprice':
+                hotels = reversed(hotels)
+
+            for ikey, i_hotel in enumerate(hotels):
+                item_hotel = types.InlineKeyboardButton(
+                    f"{i_hotel['name']} | {i_hotel['price']['lead']['formatted']} per night",
+                    callback_data=i_hotel['id'])
+                markup_hotel.add(item_hotel)
+                if ikey == int(quantity_hotels) - 1:
+                    break
+            bot.send_message(message.from_user.id, 'CHOOSE interest hotel for you', reply_markup=markup_hotel)
+    except (UnboundLocalError, KeyError):  # Срабатывает если по каким-то параметрам невозможно найти отели
+        bot.send_message(message.from_user.id, "Please retry your request.")
+        bot.delete_state(message.from_user.id)
 
 
 def hotels_detals(message: Message):
@@ -96,6 +100,7 @@ def hotels_detals(message: Message):
         distanceFromCenter = data['distanceFromCenter']
         cost_per_night = data['cost_per_night']
         total_cost = data['total_cost']
+        rent_days = data['rent_days']
 
 
     url = "https://hotels4.p.rapidapi.com/properties/v2/detail"
@@ -129,9 +134,11 @@ def hotels_detals(message: Message):
         bot.send_message(message.from_user.id, f"{quanyity_pic} pictures of hotel {hotel_name}: ")
 
     bot.send_message(message.from_user.id, f"Short information about this hotel: \n"
+                                           f"-----------------------------------------\n"
                                            f"Hotel's name: {hotel_name} \n"
                                            f"Address: {address} \n"
                                            f"Distance from center: {distanceFromCenter} miles\n"
+                                           f"You are planning to rent for {rent_days} nights\n"
                                            f"Cost per night: {cost_per_night} USD\n"
                                            f"Total cost for all rent: {total_cost} USD")
 
@@ -143,7 +150,7 @@ def hotels_detals(message: Message):
     bot.set_state(message.from_user.id, HotelInfoState.result)
 
 
-def table_age(message: Message) -> None:
+def table_age(message: Message) -> None:  # Создаёт таблицу для выбора возраста ребёнка от 0 до 18
     markup = types.InlineKeyboardMarkup(row_width=3)
     for j_age in range(0, 18, 3):
         item_kid_age_1 = types.InlineKeyboardButton(f"{j_age}", callback_data=str(j_age))
@@ -258,12 +265,12 @@ def price_max(message: Message):
 
 @bot.message_handler(state=HotelInfoState.check_in)
 def check_in(message: Message) -> None:
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+    with bot.retrieve_data(message.from_user.id, message.from_user.id) as data:
         if 'marker' in data:  # выполняется если дата введена неверно. Данные с ключом 'marker' уже созданы
             bot.send_message(message.from_user.id,
                              "So, please enter CHECK-IN date agen: ")
             data['marker'] = "check_in"
-            bot.set_state(message.from_user.id, HotelInfoState.check_out, message.chat.id)
+            bot.set_state(message.from_user.id, HotelInfoState.check_out)
             calendars.start_calendar(message=message)
         elif message.text.isdigit():  # выполняется если введено число при вводе количества отелей
             bot.send_message(message.from_user.id,
@@ -277,28 +284,28 @@ def check_in(message: Message) -> None:
                                                    f"quantity must have only numbers.")
 
 
-@bot.message_handler(state=HotelInfoState.check_out)
-def check_out(message: Message, flag = None) -> None:
-    if message.text.lower() in ("y", "yes", "д", "да") or flag == 1:  # Если дата заселения введена правильно
-        bot.send_message(message.from_user.id, "Thank you, I get it. Select your CHECK-OUT date now")
-        bot.set_state(message.from_user.id, HotelInfoState.room, message.chat.id)
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+@bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.check_out)
+def check_out(call, flag=None) -> None:
+    if call.data == 'yes' or flag == 1:  # Если дата заселения введена правильно
+        bot.send_message(call.from_user.id, "Thank you, I get it. Select your CHECK-OUT date now")
+        bot.set_state(call.from_user.id, HotelInfoState.room)
+        with bot.retrieve_data(call.from_user.id, call.from_user.id) as data:
             data['marker'] = "check_out"
-            calendars.start_calendar(message=message)
+            calendars.start_calendar(message=call)
     else:  # если пользователь ошибся при вводе даты заселения
-        bot.set_state(message.from_user.id, HotelInfoState.check_in, message.chat.id)
-        check_in(message=message)
+        bot.set_state(call.from_user.id, HotelInfoState.check_in)
+        check_in(message=call)
 
 
-@bot.message_handler(state=HotelInfoState.room)
-def room(message):
-    if message.text.lower() in ("y", "yes", "д", "да"):  # Если дата выселения введена правильно
-        bot.send_message(message.from_user.id, "All right, now we need to understand how many visitors are planned. \n"
-                                               "Enter HOW MANY ADULTS there will be: ")
-        bot.set_state(message.from_user.id, HotelInfoState.adults, message.chat.id)
+@bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.room)
+def room(call):
+    if call.data == 'yes':  # Если дата выселения введена правильно
+        bot.send_message(call.from_user.id, "All right, now we need to understand how many visitors are planned. \n"
+                                            "Enter HOW MANY ADULTS there will be: ")
+        bot.set_state(call.from_user.id, HotelInfoState.adults)
     else:
-        bot.set_state(message.from_user.id, HotelInfoState.check_out, message.chat.id)
-        check_out(message=message, flag=1)
+        bot.set_state(call.from_user.id, HotelInfoState.check_out)
+        check_out(call=call, flag=1)
 
 
 @bot.message_handler(state=HotelInfoState.adults)
@@ -319,8 +326,7 @@ def quantity_adults(message: Message) -> None:
     else:
         bot.send_message(message.from_user.id, "Quantity must have number "
                                                "\nand cannot be zero. "
-                                               "\nTry agan. ",
-                         message.chat.id)
+                                               "\nTry agan. ")
 
 
 @bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.kids)
@@ -382,8 +388,6 @@ def quanyity_pic(call) -> None:
 @bot.callback_query_handler(func=lambda call: True,
                             state=HotelInfoState.result)
 def call_result(call):
-    bot.send_message(call.message.chat.id, f"Your HOTEL id: {call.data}")
-
     with bot.retrieve_data(call.from_user.id, call.from_user.id) as data:
         data: dict
         all_hotels = data['all_hotels']
