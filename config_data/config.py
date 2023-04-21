@@ -13,5 +13,7 @@ DEFAULT_COMMANDS = (
     ('hello', 'Say hello, be polite'),
     ('help', "Display command help"),
     ('highprice', "Display the most EXPENSIVE hotels in the city"),
-    ('lowprice', 'Display the CHEAPEST hotels in the city')
+    ('lowprice', 'Display the CHEAPEST hotels in the city'),
+    ('bestdeal', 'Еhe best offers for the given parameters')
+
 )
