@@ -9,6 +9,8 @@ def date_confirmation(call, result):
     item_y = types.InlineKeyboardButton("Yes", callback_data='yes')
     item_n = types.InlineKeyboardButton("No", callback_data='no')
     markup.add(item_y, item_n)
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                  reply_markup=types.InlineKeyboardMarkup([]))
     bot.send_message(call.from_user.id, f"You selected {result} Is the date entered correct?", reply_markup=markup)
 
 def start_calendar(message) -> None:
