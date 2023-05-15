@@ -14,6 +14,6 @@ DEFAULT_COMMANDS = (
     ('help', "Display command help"),
     ('highprice', "Display the most EXPENSIVE hotels in the city"),
     ('lowprice', 'Display the CHEAPEST hotels in the city'),
-    ('bestdeal', 'Еhe best offers for the given parameters')
-
-)
+    ('bestdeal', 'Еhe best offers for the given parameters'),
+    ('history', 'View your search history')
+        )

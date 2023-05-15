@@ -5,17 +5,28 @@ import requests
 from telebot.types import Message
 from . import calendars
 from .functions import high_low, hotels_detals, table_age, choose_need_pic
+from datetime import datetime
+from .history_safe import History
+
+
+@bot.message_handler(commands=['history'])
+def history_servey(message: Message) -> None:
+    bot.send_message(message.from_user.id, "History of your search: ")
+    for i_history in History.history_info:
+        bot.send_message(message.from_user.id, i_history)
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
 def servey(message: Message) -> None:
+    time_now = datetime.now()
     bot.set_state(message.from_user.id, HotelInfoState.search_location, message.chat.id)
     bot.send_message(message.from_user.id, f"Hello, {message.from_user.username}. \n"
                                            f"Enter city for hotels searching")
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data: dict
-        data['command'] = message.text[1::]
+        data['command']: str = message.text[1::]
+        data['command_time']: str = f'{time_now.day}-{time_now.month}-{time_now.year} {time_now.hour}:{time_now.minute}'
 
 
 @bot.message_handler(state=HotelInfoState.search_location)
@@ -39,7 +50,7 @@ def search_location(message: Message):
     for i_city in city_list:  # выводим кнопки с названиями городов
         item_city = types.InlineKeyboardButton(i_city['regionNames']['fullName'],
                                                callback_data=i_city['gaiaId'])
-        markup.add(item_city) # добавляем название города с список кнопок
+        markup.add(item_city)  # добавляем название города с список кнопок
 
     bot.send_message(message.from_user.id, 'Choose interest location for you. '
                                            'Click the button.', reply_markup=markup)
@@ -127,7 +138,7 @@ def quantity_adults(message: Message) -> None:
         markup.add(item_0, item_1)
         bot.send_message(message.from_user.id, 'Super. '
                                                '\nBy clicking on the button, indicate whether there will be children: '
-                                               , reply_markup=markup)
+                         , reply_markup=markup)
         bot.set_state(message.chat.id, HotelInfoState.kids, message.chat.id)
 
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
@@ -152,7 +163,10 @@ def call_kids(call):  # реакция на нажатие кнопки c нал
         bot.set_state(call.message.chat.id, HotelInfoState.amount_children, call.message.chat.id)
         bot.send_message(call.message.chat.id, f"You have children. Super! "
                                                f"\nHow much?")
+
+
 check_in
+
 
 @bot.message_handler(state=HotelInfoState.amount_children)
 def amount_children(message: Message) -> None:
@@ -205,14 +219,27 @@ def call_result(call):
         for i_hotel in all_hotels:
             if i_hotel['id'] == hotel_id:
                 data['hotel_info']: dict = i_hotel
-                data['distanceFromCenter']: float = float(i_hotel['destinationInfo']['distanceFromDestination']['value'])
+                data['distanceFromCenter']: float = float(
+                    i_hotel['destinationInfo']['distanceFromDestination']['value'])
                 data['cost_per_night']: int = int(i_hotel['price']['lead']['formatted'][1::])
                 data['total_cost'] = data['rent_days'] * data['cost_per_night']
                 data['hotel_id']: str = hotel_id
 
+                history_text: list = ("--------------------------------------------------------"), \
+                                     (f"{data['command_time']}"), \
+                                     (f"command: {data['command']}"), \
+                                     (f"location name: {data['location_name']}"), \
+                                     (f"found hotels: {data['found_hotels']}"), \
+                                     (f"selected hotel: {data['hotel_info']['name']}"), \
+                                     (f"cost_per_night: {data['cost_per_night']} USD"), \
+                                     (f"quantity night: {data['rent_days']}")
+
     hotels_detals(message=call)
     data.pop('all_hotels')
     bot.delete_state(call.from_user.id)
+
+    # with bot.retrieve_data(call.from_user.id, call.) as data:
+    history = History(history_text)
 
     print('\nDATA keys: ')
     for i in data.items():  # контроль сохранённых данных, вывод на консоль

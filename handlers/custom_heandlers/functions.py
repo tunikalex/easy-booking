@@ -93,13 +93,16 @@ def high_low(message: Message) -> None:
             else:
                 pass
 
+            found_hotels: list = []
             for ikey, i_hotel in enumerate(hotels):
+                found_hotels.append(i_hotel['name'])
                 item_hotel = types.InlineKeyboardButton(
                     f"{i_hotel['name']} | {i_hotel['price']['lead']['formatted']} per night",
                     callback_data=i_hotel['id'])
                 markup_hotel.add(item_hotel)
                 if ikey == int(quantity_hotels) - 1:
                     break
+            data['found_hotels'] = found_hotels
             bot.send_message(message.from_user.id, 'CHOOSE interest hotel for you', reply_markup=markup_hotel)
     except (UnboundLocalError, KeyError):  # Срабатывает если по каким-то параметрам невозможно найти отели
         bot.send_message(message.from_user.id, "Please retry your request.")
