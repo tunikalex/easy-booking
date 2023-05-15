@@ -245,9 +245,8 @@ def call_result(call):
     data.pop('all_hotels')
     bot.delete_state(call.from_user.id)
 
-    # with bot.retrieve_data(call.from_user.id, call.) as data:
     history = History(history_text)
-
-    print('\nDATA keys: ')
-    for i in data.items():  # контроль сохранённых данных, вывод на консоль
-        print(i)
+    #
+    # print('\nDATA keys: ')
+    # for i in data.items():  # контроль сохранённых данных, вывод на консоль
+    #     print(i)
