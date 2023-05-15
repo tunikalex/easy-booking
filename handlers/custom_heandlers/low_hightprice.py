@@ -11,9 +11,11 @@ from .history_safe import History
 
 @bot.message_handler(commands=['history'])
 def history_servey(message: Message) -> None:
+    # print(History.history_info)
     bot.send_message(message.from_user.id, "History of your search: ")
     for i_history in History.history_info:
         bot.send_message(message.from_user.id, i_history)
+
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -225,11 +227,16 @@ def call_result(call):
                 data['total_cost'] = data['rent_days'] * data['cost_per_night']
                 data['hotel_id']: str = hotel_id
 
+                found_hotels = '__________found hotels:\n'
+                for i_num, i_hotel in enumerate(data['found_hotels']):
+                    found_hotels += str(i_num+1) + ": " + i_hotel + "\n"
+
+                # print(f"found_hotels: {found_hotels}")
                 history_text: list = ("--------------------------------------------------------"), \
                                      (f"{data['command_time']}"), \
                                      (f"command: {data['command']}"), \
                                      (f"location name: {data['location_name']}"), \
-                                     (f"found hotels: {data['found_hotels']}"), \
+                                     (f"{found_hotels}"), \
                                      (f"selected hotel: {data['hotel_info']['name']}"), \
                                      (f"cost_per_night: {data['cost_per_night']} USD"), \
                                      (f"quantity night: {data['rent_days']}")
