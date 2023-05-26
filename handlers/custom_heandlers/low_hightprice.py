@@ -1,3 +1,5 @@
+import sqlite3
+
 from telebot import types
 from loader import bot, api_key
 from states.hotel_info import HotelInfoState
@@ -11,11 +13,9 @@ from .history_safe import History
 
 @bot.message_handler(commands=['history'])
 def history_servey(message: Message) -> None:
-    # print(History.history_info)
     bot.send_message(message.from_user.id, "History of your search: ")
     for i_history in History.history_info:
         bot.send_message(message.from_user.id, i_history)
-
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -221,8 +221,7 @@ def call_result(call):
         for i_hotel in all_hotels:
             if i_hotel['id'] == hotel_id:
                 data['hotel_info']: dict = i_hotel
-                data['distanceFromCenter']: float = float(
-                    i_hotel['destinationInfo']['distanceFromDestination']['value'])
+                data['distanceFromCenter']: float = float(i_hotel['destinationInfo']['distanceFromDestination']['value'])
                 data['cost_per_night']: int = int(i_hotel['price']['lead']['formatted'][1::])
                 data['total_cost'] = data['rent_days'] * data['cost_per_night']
                 data['hotel_id']: str = hotel_id
@@ -231,22 +230,31 @@ def call_result(call):
                 for i_num, i_hotel in enumerate(data['found_hotels']):
                     found_hotels += str(i_num+1) + ": " + i_hotel + "\n"
 
-                # print(f"found_hotels: {found_hotels}")
-                history_text: list = ("--------------------------------------------------------"), \
-                                     (f"{data['command_time']}"), \
-                                     (f"command: {data['command']}"), \
-                                     (f"location name: {data['location_name']}"), \
-                                     (f"{found_hotels}"), \
-                                     (f"selected hotel: {data['hotel_info']['name']}"), \
-                                     (f"cost_per_night: {data['cost_per_night']} USD"), \
-                                     (f"quantity night: {data['rent_days']}")
+                print(f"found_hotels type: {type(found_hotels)}")
+                user_id: str = str(call.from_user.id)
+
+                db_data = (user_id, data['command_time'], data['command'], data['location_name'], found_hotels,
+                           data['hotel_info']['name'], data['cost_per_night'], data['rent_days'])
+
+                with sqlite3.connect('sql_history.db') as history_sql:  # создание и заполнение базы данных для History
+                    cursor = history_sql.cursor()
+                    query_db = """ CREATE TABLE IF NOT EXISTS search_history 
+                    (user_id TEXT, command_time TEXT, command TEXT, location_name TEXT, found_hotels TEXT, 
+                    hotel_info TEXT, cost_per_night TEXT, rent_days TEXT) """
+                    cursor.execute(query_db)
+                    print('БД успешно создана')
+                    cursor.execute(" INSERT INTO search_history VALUES(?, ?, ?, ?, ?, ?, ?, ?);", db_data)
+                    print('БД успешно заполнена')
+
+                    history_sql.commit()
 
     hotels_detals(message=call)
     data.pop('all_hotels')
-    bot.delete_state(call.from_user.id)
 
-    history = History(history_text)
+    # history = History(history_text)
+
     #
     # print('\nDATA keys: ')
     # for i in data.items():  # контроль сохранённых данных, вывод на консоль
     #     print(i)
+
