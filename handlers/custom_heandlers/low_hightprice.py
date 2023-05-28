@@ -5,32 +5,19 @@ from states.hotel_info import HotelInfoState
 import requests
 from telebot.types import Message
 from . import calendars
-from .functions import high_low, hotels_detals, table_age, choose_need_pic, data_base
+from .functions import high_low, hotels_detals, table_age, choose_need_pic, sql_input, sql_output
 from datetime import datetime
 
 
 @bot.message_handler(commands=['history'])
 def history_servey(message: Message) -> None:
-    user_id = str(message.from_user.id)
-    try:
-        with sqlite3.connect(user_id + '.db') as history_sql:
-            cursor = history_sql.cursor()
-            cursor.execute("SELECT * from search_history")
-            records = cursor.fetchall()
-            bot.send_message(message.from_user.id, "History of your search: ")
-            for row in records:
-                bot.send_message(message.from_user.id, "___________________________________________ \n"
-                                                       f"Command time: {row[0]} \n"
-                                                       f"Command: {row[1]} \n"
-                                                       f"Location name: {row[2]} \n"
-                                                       f"\n"
-                                                       f"Found hotels: \n{row[3]} \n"
-                                                       f"Hotel info: {row[4]} \n"
-                                                       f"Cost per night: {row[5]} USD \n"
-                                                       f"Quantity night: {row[6]}")
-            cursor.close()
-    except sqlite3.Error as error:
-        bot.send_message(message.from_user.id, f"Your search history is empty.")
+    markup_history = types.InlineKeyboardMarkup(row_width=2)
+    item_history_3 = types.InlineKeyboardButton("3 last", callback_data="3 last")
+    item_history_5 = types.InlineKeyboardButton("5 last", callback_data="5 last")
+    item_history_today = types.InlineKeyboardButton("today", callback_data="today")
+    item_history_all = types.InlineKeyboardButton("all", callback_data="all")
+    markup_history.add(item_history_3, item_history_5, item_history_today, item_history_all)
+    bot.send_message(message.from_user.id, "What period of history do you want to show?", reply_markup=markup_history)
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -251,7 +238,7 @@ def call_result(call):
                 db_data = (data['command_time'], data['command'], data['location_name'], found_hotels,
                            data['hotel_info']['name'], data['cost_per_night'], data['rent_days'])
 
-                data_base(user_id=user_id, db_data=db_data)
+                sql_output(user_id=user_id, db_data=db_data)
 
     hotels_detals(message=call)
     data.pop('all_hotels')

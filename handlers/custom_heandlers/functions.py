@@ -78,7 +78,7 @@ def high_low(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id, message.from_user.id) as data:
             data['all_hotels'] = hotels
             if data['command'] == 'highprice':
-                hotels = reversed(hotels)
+                hotels = reversed(hotels)markup_hotel
             elif data['command'] == 'bestdeal':
                 if data['measurement'] == 'kilometer':
                     data['distance_min'] *= 0.6214
@@ -186,8 +186,7 @@ def table_age(message: Message) -> None:  # Создаёт таблицу для
         item_kid_age_2 = types.InlineKeyboardButton(f"{j_age+1}", callback_data=str(j_age+1))
         item_kid_age_3 = types.InlineKeyboardButton(f"{j_age+2}", callback_data=str(j_age+2))
         markup.add(item_kid_age_1, item_kid_age_2, item_kid_age_3)
-    bot.send_message(message.from_user.id, "Now tell me how old they are: ",
-                     reply_markup=markup)
+    bot.send_message(message.from_user.id, "Now tell me how old they are: ", reply_markup=markup)
 
 
 def choose_need_pic(message: Message) -> None:
@@ -204,7 +203,7 @@ def choose_need_pic(message: Message) -> None:
     bot.send_message(message.from_user.id, "How many PHOTOS of the hotel would you like to see? ", reply_markup=markup)
     bot.set_state(message.from_user.id, HotelInfoState.quantity_pic)
 
-def data_base(user_id, db_data):
+def sql_input(user_id, db_data):
     with sqlite3.connect(user_id + '.db') as history_sql:  # создание и заполнение базы данных для History
         cursor = history_sql.cursor()
         query_db = " CREATE TABLE IF NOT EXISTS search_history " \
@@ -214,3 +213,25 @@ def data_base(user_id, db_data):
         cursor.execute(" INSERT INTO search_history VALUES(?, ?, ?, ?, ?, ?, ?);", db_data)
 
     history_sql.commit()
+
+def sql_output():
+    user_id = str(message.from_user.id)
+    try:
+        with sqlite3.connect(user_id + '.db') as history_sql:
+            cursor = history_sql.cursor()
+            cursor.execute("SELECT * from search_history")
+            records = cursor.fetchall()
+            bot.send_message(message.from_user.id, "History of your search: ")
+            for row in records:
+                bot.send_message(message.from_user.id, "___________________________________________ \n"
+                                                       f"Command time: {row[0]} \n"
+                                                       f"Command: {row[1]} \n"
+                                                       f"Location name: {row[2]} \n"
+                                                       f"\n"
+                                                       f"Found hotels: \n{row[3]} \n"
+                                                       f"Hotel info: {row[4]} \n"
+                                                       f"Cost per night: {row[5]} USD \n"
+                                                       f"Quantity night: {row[6]}")
+            cursor.close()
+    except sqlite3.Error as error:
+        bot.send_message(message.from_user.id, f"Your search history is empty.")
