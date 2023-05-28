@@ -249,7 +249,7 @@ def call_result(call):
                 db_data = (data['command_time'], data['command'], data['location_name'], found_hotels,
                            data['hotel_info']['name'], data['cost_per_night'], data['rent_days'])
 
-                sql_output(user_id=user_id, db_data=db_data)
+                sql_input(user_id=user_id, db_data=db_data)
 
     hotels_detals(message=call)
     data.pop('all_hotels')
