@@ -1,21 +1,36 @@
 import sqlite3
-
 from telebot import types
 from loader import bot, api_key
 from states.hotel_info import HotelInfoState
 import requests
 from telebot.types import Message
 from . import calendars
-from .functions import high_low, hotels_detals, table_age, choose_need_pic
+from .functions import high_low, hotels_detals, table_age, choose_need_pic, data_base
 from datetime import datetime
-from .history_safe import History
 
 
 @bot.message_handler(commands=['history'])
 def history_servey(message: Message) -> None:
-    bot.send_message(message.from_user.id, "History of your search: ")
-    for i_history in History.history_info:
-        bot.send_message(message.from_user.id, i_history)
+    user_id = str(message.from_user.id)
+    try:
+        with sqlite3.connect(user_id + '.db') as history_sql:
+            cursor = history_sql.cursor()
+            cursor.execute("SELECT * from search_history")
+            records = cursor.fetchall()
+            bot.send_message(message.from_user.id, "History of your search: ")
+            for row in records:
+                bot.send_message(message.from_user.id, "___________________________________________ \n"
+                                                       f"Command time: {row[0]} \n"
+                                                       f"Command: {row[1]} \n"
+                                                       f"Location name: {row[2]} \n"
+                                                       f"\n"
+                                                       f"Found hotels: \n{row[3]} \n"
+                                                       f"Hotel info: {row[4]} \n"
+                                                       f"Cost per night: {row[5]} USD \n"
+                                                       f"Quantity night: {row[6]}")
+            cursor.close()
+    except sqlite3.Error as error:
+        bot.send_message(message.from_user.id, f"Your search history is empty.")
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -221,40 +236,26 @@ def call_result(call):
         for i_hotel in all_hotels:
             if i_hotel['id'] == hotel_id:
                 data['hotel_info']: dict = i_hotel
-                data['distanceFromCenter']: float = float(i_hotel['destinationInfo']['distanceFromDestination']['value'])
+                data['distanceFromCenter']: float = float(
+                    i_hotel['destinationInfo']['distanceFromDestination']['value'])
                 data['cost_per_night']: int = int(i_hotel['price']['lead']['formatted'][1::])
                 data['total_cost'] = data['rent_days'] * data['cost_per_night']
                 data['hotel_id']: str = hotel_id
 
-                found_hotels = '__________found hotels:\n'
+                found_hotels = ''
                 for i_num, i_hotel in enumerate(data['found_hotels']):
-                    found_hotels += str(i_num+1) + ": " + i_hotel + "\n"
+                    found_hotels += str(i_num + 1) + ": " + i_hotel + "\n"
 
-                print(f"found_hotels type: {type(found_hotels)}")
                 user_id: str = str(call.from_user.id)
 
-                db_data = (user_id, data['command_time'], data['command'], data['location_name'], found_hotels,
+                db_data = (data['command_time'], data['command'], data['location_name'], found_hotels,
                            data['hotel_info']['name'], data['cost_per_night'], data['rent_days'])
 
-                with sqlite3.connect('sql_history.db') as history_sql:  # создание и заполнение базы данных для History
-                    cursor = history_sql.cursor()
-                    query_db = """ CREATE TABLE IF NOT EXISTS search_history 
-                    (user_id TEXT, command_time TEXT, command TEXT, location_name TEXT, found_hotels TEXT, 
-                    hotel_info TEXT, cost_per_night TEXT, rent_days TEXT) """
-                    cursor.execute(query_db)
-                    print('БД успешно создана')
-                    cursor.execute(" INSERT INTO search_history VALUES(?, ?, ?, ?, ?, ?, ?, ?);", db_data)
-                    print('БД успешно заполнена')
-
-                    history_sql.commit()
+                data_base(user_id=user_id, db_data=db_data)
 
     hotels_detals(message=call)
     data.pop('all_hotels')
-
-    # history = History(history_text)
-
     #
     # print('\nDATA keys: ')
     # for i in data.items():  # контроль сохранённых данных, вывод на консоль
     #     print(i)
-

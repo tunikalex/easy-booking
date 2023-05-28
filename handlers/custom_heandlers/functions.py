@@ -3,6 +3,7 @@ from loader import bot, api_key
 from states.hotel_info import HotelInfoState
 import requests
 from telebot.types import Message
+import sqlite3
 from . import calendars
 
 
@@ -146,6 +147,8 @@ def hotels_detals(message: Message):
     hotel_name = response["data"]["propertyInfo"]["summary"]["name"]
     address = response['data']['propertyInfo']['summary']['location']['address']['addressLine']
     photos = response['data']['propertyInfo']['propertyGallery']['images']
+    hotel_id = str(data['hotel_id'])
+    hotel_URL = f'https://www.hotels.com/h{hotel_id}.Hotel-Information'
 
     if quanyity_pic > 0:  # срабатывет, если количество фотографий больше нуля
         for i_ind, i_image in enumerate(photos):
@@ -162,6 +165,7 @@ def hotels_detals(message: Message):
                                            f"---------------------------------------------\n"
                                            f"Hotel's name: {hotel_name} \n"
                                            f"Address: {address} \n"
+                                           f"link for hotel: {hotel_URL} \n"
                                            f"Distance from center: {round(distanceFromCenter, 2)} {measurement}\n"
                                            f"You are planning to rent for {rent_days} nights\n"
                                            f"Cost per night: {cost_per_night} USD\n"
@@ -199,3 +203,14 @@ def choose_need_pic(message: Message) -> None:
     markup.add(item_0)
     bot.send_message(message.from_user.id, "How many PHOTOS of the hotel would you like to see? ", reply_markup=markup)
     bot.set_state(message.from_user.id, HotelInfoState.quantity_pic)
+
+def data_base(user_id, db_data):
+    with sqlite3.connect(user_id + '.db') as history_sql:  # создание и заполнение базы данных для History
+        cursor = history_sql.cursor()
+        query_db = " CREATE TABLE IF NOT EXISTS search_history " \
+                   "(command_time TEXT, command TEXT, location_name TEXT, found_hotels TEXT, " \
+                   "hotel_info TEXT, cost_per_night TEXT, rent_days TEXT) "
+        cursor.execute(query_db)
+        cursor.execute(" INSERT INTO search_history VALUES(?, ?, ?, ?, ?, ?, ?);", db_data)
+
+    history_sql.commit()
