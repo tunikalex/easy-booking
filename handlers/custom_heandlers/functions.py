@@ -4,6 +4,7 @@ from states.hotel_info import HotelInfoState
 import requests
 from telebot.types import Message
 import sqlite3
+from datetime import datetime
 from . import calendars
 
 
@@ -214,15 +215,20 @@ def sql_input(user_id, db_data):
 
     history_sql.commit()
 
-def sql_output(message, extradition=1000):
+def sql_output(message, extradition=999, today=False):
     user_id = str(message.from_user.id)
+    time_now = datetime.now()
+    today_time: str = f'{time_now.day}-{time_now.month}-{time_now.year}'
     try:
         with sqlite3.connect(user_id + '.db') as history_sql:
             cursor = history_sql.cursor()
             cursor.execute("SELECT * from search_history")
-            records = cursor.fetchall()
+            records = cursor.fetchmany(size=extradition)
+
             bot.send_message(message.from_user.id, "History of your search: ")
             for row in records:
+                if today and today_time not in row[0]:
+                    break
                 bot.send_message(message.from_user.id, "___________________________________________ \n"
                                                        f"Command time: {row[0]} \n"
                                                        f"Command: {row[1]} \n"

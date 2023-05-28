@@ -23,11 +23,11 @@ def history_servey(message: Message) -> None:
 @bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.history_output)
 def call_history(call):
     if call.data == "3 last":
-        pass
+        sql_output(message=call, extradition=3)
     elif call.data == "5 last":
-        pass
+        sql_output(message=call, extradition=5)
     elif call.data == "today":
-        pass
+        sql_output(message=call, today=True)
     else: # call.data == "all"
         sql_output(message=call)
 
