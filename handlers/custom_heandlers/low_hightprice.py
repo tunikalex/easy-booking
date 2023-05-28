@@ -180,20 +180,20 @@ def call_kids(call):  # реакция на нажатие кнопки c нал
                                                f"\nHow much?")
 
 
-check_in
-
-
 @bot.message_handler(state=HotelInfoState.amount_children)
 def amount_children(message: Message) -> None:
-    if message.text.isdigit():
-        bot.send_message(message.from_user.id, f"Good! So let's write. ")
-        table_age(message=message)
-        bot.set_state(message.from_user.id, HotelInfoState.kids_age, message.chat.id)
+    try:
+        if int(message.text) == 0:
+            bot.send_message(message.from_user.id, "The number of children cannot be equal to '0'. Enter again.")
+        else:
+            bot.send_message(message.from_user.id, f"Good! So let's write. ")
+            table_age(message=message)
+            bot.set_state(message.from_user.id, HotelInfoState.kids_age, message.chat.id)
 
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['amount_children'] = int(message.text)
-    else:
-        bot.send_message(message.from_user.id, "Quantity must have number "
+            with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+                data['amount_children'] = int(message.text)
+    except ValueError:
+        bot.send_message(message.from_user.id, "Quantity must have natural number "
                                                "\nand cannot be zero. "
                                                "\nTry agan. ")
 
