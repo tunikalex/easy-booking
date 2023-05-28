@@ -1,4 +1,3 @@
-import sqlite3
 from telebot import types
 from loader import bot, api_key
 from states.hotel_info import HotelInfoState

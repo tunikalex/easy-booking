@@ -5,7 +5,6 @@ import requests
 from telebot.types import Message
 import sqlite3
 from datetime import datetime
-from . import calendars
 
 
 def high_low(message: Message) -> None:
@@ -223,11 +222,13 @@ def sql_output(message, extradition=999, today=False):
         with sqlite3.connect(user_id + '.db') as history_sql:
             cursor = history_sql.cursor()
             cursor.execute("SELECT * from search_history")
-            records = cursor.fetchmany(size=extradition)
+            records = cursor.fetchall()
 
             bot.send_message(message.from_user.id, "History of your search: ")
-            for row in records:
+            for num, row in enumerate(records[::-1]):
                 if today and today_time not in row[0]:
+                    break
+                if num == extradition:
                     break
                 bot.send_message(message.from_user.id, "___________________________________________ \n"
                                                        f"Command time: {row[0]} \n"
