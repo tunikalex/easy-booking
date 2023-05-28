@@ -78,7 +78,7 @@ def high_low(message: Message) -> None:
         with bot.retrieve_data(message.from_user.id, message.from_user.id) as data:
             data['all_hotels'] = hotels
             if data['command'] == 'highprice':
-                hotels = reversed(hotels)markup_hotel
+                hotels = reversed(hotels)
             elif data['command'] == 'bestdeal':
                 if data['measurement'] == 'kilometer':
                     data['distance_min'] *= 0.6214
@@ -214,7 +214,7 @@ def sql_input(user_id, db_data):
 
     history_sql.commit()
 
-def sql_output():
+def sql_output(message, extradition=1000):
     user_id = str(message.from_user.id)
     try:
         with sqlite3.connect(user_id + '.db') as history_sql:

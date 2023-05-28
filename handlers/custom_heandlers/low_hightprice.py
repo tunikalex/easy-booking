@@ -18,6 +18,18 @@ def history_servey(message: Message) -> None:
     item_history_all = types.InlineKeyboardButton("all", callback_data="all")
     markup_history.add(item_history_3, item_history_5, item_history_today, item_history_all)
     bot.send_message(message.from_user.id, "What period of history do you want to show?", reply_markup=markup_history)
+    bot.set_state(message.from_user.id, HotelInfoState.history_output, message.chat.id)
+
+@bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.history_output)
+def call_history(call):
+    if call.data == "3 last":
+        pass
+    elif call.data == "5 last":
+        pass
+    elif call.data == "today":
+        pass
+    else: # call.data == "all"
+        sql_output(message=call)
 
 
 @bot.message_handler(commands=['lowprice', 'highprice', 'bestdeal'])
@@ -64,8 +76,7 @@ def search_location(message: Message):
         data['cities_info'] = city_list  # Сохранили список найденыйх городов
 
 
-@bot.callback_query_handler(func=lambda call: True,
-                            state=HotelInfoState.search_location)
+@bot.callback_query_handler(func=lambda call: True, state=HotelInfoState.search_location)
 def call_city(call):  # реакция на нажатие кнопки с выбраной локацией
     with bot.retrieve_data(call.from_user.id, call.from_user.id) as data:
         flag = False

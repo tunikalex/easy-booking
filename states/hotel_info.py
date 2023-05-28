@@ -18,3 +18,4 @@ class HotelInfoState(StatesGroup):
     need_pic = State()
     quantity_pic = State()
     result = State()
+    history_output = State()
